@@ -1,92 +1,47 @@
-# GPSMapApp (SimpleGPSMapApp) 🗺️📸
+# GPSMapApp (SimpleGPSMapApp) - Análisis y Plan de Seguridad Móvil
 
-Aplicación Android desarrollada en **Java** que integra **Google Maps API**, **GPS / Fused Location** y la **Cámara** del dispositivo.
+# Descripción
+Este proyecto es una aplicación Android (desarrollada en Java e integrada con el SDK de Google Maps) que ha sido sometida a una auditoría de seguridad. El repositorio documenta el análisis estático y dinámico realizado con **MobSF v4.6.3** y **Frida**, identificando vulnerabilidades comunes y estableciendo un plan estructurado de mitigación alineado con el estándar **OWASP MASVS v2.0**.
 
-## 🚀 Funcionalidades
+*Nota: Las soluciones técnicas documentadas en la carpeta de documentación constituyen el plan de acción y hoja de ruta (propuestas), no estando implementadas aún en el código fuente de esta compilación.*
 
-1. **Google Maps Integrado**:
-   - Muestra un mapa interactivo con controles de zoom y brújula (`MapView`).
-2. **Ubicación en Tiempo Real (GPS)**:
-   - Solicita permisos en tiempo de ejecución (`ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION`).
-   - Obtiene la ubicación actual del usuario mediante `FusedLocationProviderClient` y centra la cámara en la posición detectada.
-   - Coloca un marcador azul (`HUE_AZURE`) en la ubicación actual del usuario.
-3. **Marcadores Personalizados**:
-   - Permite al usuario tocar cualquier punto del mapa (`setOnMapClickListener`) para añadir marcadores rojos con título y coordenadas.
-   - Incluye un botón flotante para limpiar los marcadores del mapa.
-4. **Captura de Fotos con la Cámara**:
-   - Solicita permiso de cámara en tiempo de ejecución (`CAMERA`).
-   - Inicia la cámara usando `ActivityResultLauncher` e Intent `MediaStore.ACTION_IMAGE_CAPTURE`.
-   - Muestra una vista previa Flotante/CardView con la foto capturada en tiempo real.
+## Vulnerabilidades Identificadas
+Tras la auditoría, se identificaron los siguientes riesgos principales:
+*   **Inyección SQL:** Riesgo en la persistencia local de marcadores mediante SQLite.
+*   **Comunicación no segura (MITM):** Ausencia de *Certificate Pinning* y configuración explícita de TLS.
+*   **Exposición de datos sensibles:**
+    *   API Key de Google Maps hardcodeada (`google_maps_key`).
+    *   Copia de seguridad por ADB habilitada (`android:allowBackup="true"`).
+*   **Configuraciones de compilación inseguras:** APK firmado con certificado de debug (`CN=Android Debug`) y depuración habilitada (`debuggable="true"`).
+*   **Permisos excesivos:** Solicitud del permiso `CAMERA` sin ser utilizado.
+*   **Falta de ofuscación:** Código fácilmente descompilable al tener `minifyEnabled false`.
 
----
+## Mejoras Propuestas (Hoja de Ruta)
+Las siguientes medidas están documentadas detalladamente en la carpeta de documentación para ser aplicadas:
+*   **Cifrado de datos sensibles:** Implementación futura de `Android Keystore` con AES-256-GCM para proteger tokens y datos locales.
+*   **Comunicación segura (HTTPS):** Creación de `network_security_config.xml` bloqueando tráfico en texto claro e implementando *SSL Certificate Pinning*.
+*   **Validación y sanitización de entradas:** Uso de consultas parametrizadas y validación geométrica de coordenadas.
+*   **Hardening:** Configuración de `debuggable="false"`, `allowBackup="false"` y uso de un Keystore de producción.
+*   **Ofuscación de Código:** Activación de R8/ProGuard en compilaciones *release*.
 
-## 🛠️ Configuración e Instalación
+## Documentación
+Toda la auditoría, informes técnicos y guías de implementación se encuentran organizados en la carpeta `Documentacion`:
 
-### 1. Clonar el repositorio
-```bash
-git clone https://github.com/franciscoelking10-debug/SimpleGPSMapApp.git
-cd SimpleGPSMapApp
-```
+**Informes y Guías Técnicas (.md):**
+*   [Vulnerabilidades](Documentacion/vulnerabilities.md) - Registro de hallazgos de MobSF.
+*   [Best Practices](Documentacion/best_practices.md) - Guía de código seguro y configuraciones.
+*   [Security Tips](Documentacion/INFORME_SECURITY_TIPS.md) - Justificación de los 6 Security Tips y pruebas planificadas.
+*   [Security Improvement Program](Documentacion/security_improvement_program.md) - KPIs, ciclo continuo y hoja de ruta.
 
-> **Target SDK**: Android 11 (API 30) | **Lenguaje**: Java
+**Informe Académico y Reportes (.pdf / .docx):**
+*   [Informe Técnico de Seguridad](Documentacion/Informe/Informe_Seguridad_Aplicacion_Android(Alumno).docx) *(Nota: verifica el nombre exacto del archivo docx)*
+*   [Reporte de Análisis Estático](Documentacion/Static%20Analysis.pdf)
+*   [Reporte de Análisis Dinámico](Documentacion/Dynamic%20Analysis.pdf)
+*   [Reporte Estático MobSF](Documentacion/reporte%20statico%20mobSF.pdf)
+*   [Reporte Consolidado](Documentacion/vulnerability_report.pdf)
 
-### 2. Configurar Google Maps API Key
-Para que el mapa se renderice correctamente en la aplicación:
-1. Dirígete a [Google Cloud Console](https://console.cloud.google.com/).
-2. Crea un proyecto y habilita la API **Maps SDK for Android**.
-3. Genera una **API Key**.
-4. Abre el archivo `app/src/main/res/values/google_maps_api.xml` y reemplaza el texto `TU_API_KEY_AQUI` con tu clave:
-
-```xml
-<resources>
-    <string name="google_maps_key" templateMergeStrategy="preserve" translatable="false">TU_CLAVE_API_REAL_AQUI</string>
-</resources>
-```
-
-### 3. Ejecutar la Aplicación
-1. Abre el proyecto en **Android Studio**.
-2. Sincroniza Gradle (`Sync Project with Gradle Files`).
-3. Conecta un dispositivo físico con depuración USB habilitada o inicia un emulador Android (con Google Play Services disponibles).
-4. Haz clic en **Run 'app'**.
-
----
-
-## 📤 Pasos para subir el proyecto a GitHub
-
-Para crear e inicializar el repositorio local y subirlo a GitHub bajo el nombre `SimpleGPSMapApp`:
-
-```bash
-# 1. Inicializar el repositorio Git
-git init
-
-# 2. Agregar todos los archivos
-git add .
-
-# 3. Realizar el primer commit
-git commit -m "Primer commit - Proyecto GPSMapApp con Google Maps y Cámara"
-
-# 4. Cambiar la rama principal a main
-git branch -M main
-
-# 5. Conectar con el repositorio remoto de GitHub
-git remote add origin https://github.com/tu-usuario/SimpleGPSMapApp.git
-
-# 6. Subir los cambios a GitHub
-git push -u origin main
-```
-
----
-
-## ⚙️ Permisos Utilizados (`AndroidManifest.xml`)
-
-```xml
-<uses-permission android:name="android.permission.INTERNET" />
-<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-<uses-permission android:name="android.permission.CAMERA" />
-```
-
----
-
-## ✒️ Autor
-Desarrollado para la actividad de **GPS y Mapas** - Android Java.
+## Cómo Ejecutar la Aplicación de Forma Segura
+Para importar y probar el proyecto en tu entorno local:
+1. **Clonar el repositorio:**
+   ```bash
+   git clone <URL_DEL_REPOSITORIO>
